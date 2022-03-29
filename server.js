@@ -1,14 +1,16 @@
+//import { request, gql } from "graphql-request";
+const graphql = require("graphql-request");
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
 const fs = require("fs");
 const https = require("https");
-import { request, gql } from "graphql-request";
+const archiver = require("archiver");
 
 const app = express();
 const port = 3000;
 
-const query = gql`
+const query = graphql.gql`
   query getDemarche(
     $demarcheNumber: Int!
     $state: DossierState
@@ -92,28 +94,6 @@ const query = gql`
       }
       ...PersonneMoraleFragment
     }
-  }
-
-  fragment DemarcheDescriptorFragment on DemarcheDescriptor {
-    id
-    number
-    title
-    description
-    state
-    declarative
-    dateCreation
-    datePublication
-    dateDerniereModification
-    dateDepublication
-    dateFermeture
-  }
-
-  fragment DeletedDossierFragment on DeletedDossier {
-    id
-    number
-    dateSupression
-    state
-    reason
   }
 
   fragment RevisionFragment on Revision {
@@ -325,6 +305,8 @@ const query = gql`
   }
 `;
 
+//const numero_demarche = 57091;
+
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -333,34 +315,87 @@ app.get("/", function (req, res) {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.get("/get_last_cobaye_id", function (req, res) {
-  let nombre;
-  let files = fs.readdirSync(path.join(__dirname, "data"));
-  nombre = files.length;
-  res.send(
-    (nombre === undefined || nombre === null
-      ? Math.floor(100000 + Math.random() * 900000)
-      : nombre
-    ).toString()
-  ); // envoie le nombre de fichiers ou un nombre aléatoire à 6 chiffres
+app.get("/archive/:numero_demarche", function (req, res) {
+  var numero_demarche = req.params.numero_demarche.toString();
+  mkdir("temp/" + numero_demarche);
+  graphql
+    .request({
+      url: "https://www.demarches-simplifiees.fr/api/v2/graphql",
+      document: query,
+      variables: { demarcheNumber: parseInt(numero_demarche) },
+      requestHeaders: {
+        authorization: "Bearer vgYasHB8kxYELzjEtbdYXWBj",
+      },
+    })
+    .then((data) => {
+      console.log(data);
+      fs.writeFileSync(
+        path.join(
+          __dirname,
+          "temp",
+          numero_demarche,
+          `${data.demarche.number}.json`
+        ),
+        JSON.stringify(data)
+      );
+      data.demarche.dossiers.nodes.forEach((dossier) => {
+        // Téléchargement du résumé pdf de chaque dossier
+        let path_for_download = path.join(
+          __dirname,
+          "temp",
+          numero_demarche,
+          dossier.number.toString()
+        );
+        mkdir(path_for_download);
+        download_file(
+          path_for_download,
+          `${dossier.number.toString()}_resume.pdf`,
+          dossier.pdf.url
+        );
+        // Parcours des champs, recherche des champs pièce justificative
+        dossier.champs.forEach((element) => {
+          if (element.file) {
+            telechargement_fichier(dossier, element, numero_demarche);
+          } else if (element.champs) {
+            element.champs.forEach((champ_repetable) => {
+              if (champ_repetable.file) {
+                telechargement_fichier(dossier, champ_repetable, numero_demarche);
+              }
+            });
+          }
+        });
+        var demarche_dossier = path.join(__dirname, "temp", numero_demarche);
+        var demarche_dossier_cible = path.join(
+          __dirname,
+          "temp",
+          `${numero_demarche}.zip`
+        );
+        zipDirectory(demarche_dossier, demarche_dossier_cible).then((e) => {
+          res.download(demarche_dossier_cible);
+        });
+      });
+    });
 });
 
-app.get("/archive", function (req, res) {
-  const numero_demarche = 56504; //Math.floor(10000 + Math.random() * 90000);
-  fs.mkdir("temp/" + numero_demarche, (err) => {
+function telechargement_fichier(dossier, element, numero_demarche) {
+  let path_for_download = path.join(
+    __dirname,
+    "temp",
+    numero_demarche,
+    dossier.number.toString(),
+    "pieces_justificatives"
+  );
+  mkdir(path_for_download);
+  download_file(path_for_download, element.file.filename, element.file.url);
+}
+
+function mkdir(dir) {
+  fs.mkdir(dir, (err) => {
     if (err) {
-      throw err;
+      console.error(err);
     }
   });
-  request({
-    url: "https://www.demarches-simplifiees.fr/api/v2/graphql",
-    document: query,
-    variables: { demarcheNumber: 56504 },
-    requestHeaders: {
-      authorization: "Bearer vgYasHB8kxYELzjEtbdYXWBj",
-    },
-  }).then((data) => console.log(data));
-});
+}
 
 function download_file(folder, file_name, url) {
   const file = fs.createWriteStream(`${folder}/${file_name}`);
@@ -371,19 +406,25 @@ function download_file(folder, file_name, url) {
 
 function getDataFromAPI(params) {}
 
-app.post("/", function requestHandler(req, res) {
-  res.end("Hello, World!");
-});
+/**
+ * @param {String} sourceDir: /some/folder/to/compress
+ * @param {String} outPath: /path/to/created.zip
+ * @returns {Promise}
+ */
+function zipDirectory(sourceDir, outPath) {
+  const archive = archiver("zip", { zlib: { level: 9 } });
+  const stream = fs.createWriteStream(outPath);
 
-app.post("/save_data", function requestHandler(req, res) {
-  console.log(req.body);
-  let data = req.body;
-  fs.writeFileSync(
-    path.join(__dirname, "data", `${data.user_id}.json`),
-    JSON.stringify(data)
-  );
-  res.end(JSON.stringify({ ok: 200 }));
-});
+  return new Promise((resolve, reject) => {
+    archive
+      .directory(sourceDir, false)
+      .on("error", (err) => reject(err))
+      .pipe(stream);
+
+    stream.on("close", () => resolve());
+    archive.finalize();
+  });
+}
 
 app.listen(port, () => {
   console.log(`App listening at http://localhost:${port}`);
