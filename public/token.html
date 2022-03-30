@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr" data-fr-scheme="system">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="stylesheet" href="dsfr/dsfr.min.css">
+
+	<link rel="apple-touch-icon" href="favicon/apple-touch-icon.png"><!-- 180×180 -->
+	<link rel="icon" href="favicon/favicon.svg" type="image/svg+xml">
+	<link rel="shortcut icon" href="favicon/favicon.ico" type="image/x-icon"><!-- 32×32 -->
+	<link rel="manifest" href="favicon/manifest.webmanifest" crossorigin="use-credentials">
+	<!-- Modifier les chemins relatifs des favicons en fonction de la structure du projet -->
+	<!-- Dans le fichier manifest.webmanifest aussi, modifier les chemins vers les images -->
+
+	<title>Accueil - Gestion des APIs</title>
+</head>
+
+<body>
+	<header role="banner" class="fr-header">
+		<div class="fr-header__body">
+			<div class="fr-container">
+				<div class="fr-header__body-row">
+					<div class="fr-header__brand fr-enlarge-link">
+						<div class="fr-header__brand-top">
+							<div class="fr-header__logo">
+								<p class="fr-logo">
+									Secrétariat Général
+									<br>pour les Affaires Régionales
+								</p>
+							</div>
+						</div>
+						<div class="fr-header__service">
+							<a href="index.html" title="Accueil - Gestion des APIs">
+								<p class="fr-header__service-title">Gestion des APIs</p>
+							</a>
+							<p class="fr-header__service-tagline">Outils de récupération et de formattage de données
+								APIs</p>
+						</div>
+					</div>
+					<div class="fr-header__tools">
+						<div class="fr-header__tools-links">
+							<ul class="fr-links-group">
+								<li>
+									<a class="fr-link fr-fi-lock-line" href="token.html">Se connecter</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<main class="contentAll" role="main">
+
+		<!-- PRESENTATION -->
+		<div class="fr-container">
+			<div class="fr-grid-row fr-mt-7w">
+				<div class="fr-col">
+					<h2>Se connecter - Gestion des accès aux APIs</h2>
+					<p class="fr-mt-5w">
+						L'interrogation des APIs peut être conditionnées par une autorisation d'accès, transmises par le
+						fournisseur des données.<br>
+						Dans cet écran vous retrouverez la liste des autorisations nécéssaires par fournisseur de
+						données.
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- INFORMATION -->
+		<div class="fr-container">
+			<div class="fr-alert fr-alert--info fr-alert--sm">
+				<p>A noter qu'il n'est pas nécéssaire de renseigner tous les champs. Vous pouvez vous contenter de
+					renseigner les champs uniquement nécéssaire à votre besoin.</p>
+			</div>
+		</div>
+
+		<!-- SEPARATION -->
+		<hr class="fr-grid-row--end fr-col-offset-xs-2 fr-my-5w">
+
+		<!-- FORMULAIRE -->
+		<div class="fr-container">
+			<div class="fr-grid-row fr-grid-row--gutters ">
+				<div class="fr-input-group fr-mb-5w fr-col-12">
+					<div class="fr-select-group">
+						<label class="fr-label" for="selectFournisseur">Liste des fournisseurs de données
+						</label>
+						<select class="fr-select" id="selectFournisseur" name="selectFournisseur">
+							<option value="" selected disabled hidden>Selectionnez un fournisseur de données</option>
+							<option value="DS">Démarches Simplifiées</option>
+						</select>
+					</div>
+					<label class="fr-label" for="token" required>Jeton d'accès
+					</label>
+					<input class="fr-input" type="text" id="token" name="token">
+				</div>
+			</div>
+		</div>
+
+		<!-- BOUTON -->
+		<ul class="fr-btns-group--center fr-btns-group--inline">
+			<li>
+				<button id="enregistrerToken" class="fr-btn fr-fi-save-line fr-btn--icon-left">
+					Enregistrer
+				</button>
+			</li>
+			<li>
+				<button id="btnAccueil" class="fr-btn fr-btn--secondary fr-fi-logout-box-r-line fr-btn--icon-left">
+					Retourner sur la page d'accueil
+				</button>
+			</li>
+		</ul>
+	</main>
+
+	<footer class="fr-footer" role="contentinfo" id="footer">
+		<div class="fr-container">
+			<div class="fr-footer__body">
+				<div class="fr-footer__brand fr-enlarge-link">
+					<a href="index.html" title="Retour à l’accueil">
+						<p class="fr-logo" title="république française">
+							Secrétariat Général
+							<br>pour les Affaires Régionales
+						</p>
+					</a>
+				</div>
+				<div class="fr-footer__content">
+					<p class="fr-footer__content-desc"></p>
+					<ul class="fr-footer__content-list">
+						<li class="fr-footer__content-item">
+							<a class="fr-footer__content-link" href="https://legifrance.gouv.fr">legifrance.gouv.fr</a>
+						</li>
+						<li class="fr-footer__content-item">
+							<a class="fr-footer__content-link" href="https://gouvernement.fr">gouvernement.fr</a>
+						</li>
+						<li class="fr-footer__content-item">
+							<a class="fr-footer__content-link" href="https://service-public.fr">service-public.fr</a>
+						</li>
+						<li class="fr-footer__content-item">
+							<a class="fr-footer__content-link" href="https://data.gouv.fr">data.gouv.fr</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div class="fr-footer__bottom">
+				<ul class="fr-footer__bottom-list">
+					<li class="fr-footer__bottom-item">
+						<a class="fr-footer__bottom-link" href="#">Plan du site</a>
+					</li>
+					<li class="fr-footer__bottom-item">
+						<a class="fr-footer__bottom-link" href="#">Accessibilité: non</a>
+					</li>
+					<li class="fr-footer__bottom-item">
+						<a class="fr-footer__bottom-link" href="#">Mentions légales</a>
+					</li>
+					<li class="fr-footer__bottom-item">
+						<a class="fr-footer__bottom-link" href="#">Données personnelles</a>
+					</li>
+					<li class="fr-footer__bottom-item">
+						<a class="fr-footer__bottom-link" href="#">Gestion des cookies</a>
+					</li>
+				</ul>
+				<div class="fr-footer__bottom-copy">
+					<p>Sauf mention contraire, tous les contenus de ce site sont sous <a
+							href="https://github.com/etalab/licence-ouverte/blob/master/LO.md" target="_blank">licence
+							etalab-2.0</a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</footer>
+
+	<script type="text/javascript" language="javascript">
+		document.getElementById('enregistrerToken').addEventListener('click', (e) => {
+			var fournisseur = document.getElementById('selectFournisseur').value;
+			var token = document.getElementById('token').value;
+			sessionStorage.setItem(fournisseur, token);
+		})
+		document.getElementById("selectFournisseur").addEventListener('change', (e) => {
+			var fournisseur = document.querySelector("#selectFournisseur").value;
+			document.querySelector("#token").value = sessionStorage.getItem(fournisseur)
+		})
+		document.querySelector('button#btnAccueil').addEventListener('click', (e) => {
+			window.location.href = "index.html";
+		})
+	</script>
+</body>
+
+</html>

@@ -1,11 +1,13 @@
 //import { request, gql } from "graphql-request";
 const graphql = require("graphql-request");
 const express = require("express");
+const zip = require("express-zip");
 const path = require("path");
 const bodyParser = require("body-parser");
 const fs = require("fs");
-const https = require("https");
 const archiver = require("archiver");
+const rimraf = require("rimraf");
+const https = require("https");
 
 const app = express();
 const port = 3000;
@@ -315,8 +317,21 @@ app.get("/", function (req, res) {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.get("/archive/:numero_demarche", function (req, res) {
+app.get("/token.html", function (req, res) {
+  res.sendFile(path.join(__dirname, "token.html"));
+});
+
+app.get("/test", (req, res) => {
+  res
+    .attachment(
+      "C:\\Users\\bbernier\\Desktop\\stage\\archiveur_ds\\temp\\57091\\57091.zip"
+    )
+    .send();
+});
+
+app.get("/archive/:numero_demarche", async (req, res) => {
   var numero_demarche = req.params.numero_demarche.toString();
+  var bearerApiDS = req.query.bearer;
   mkdir("temp/" + numero_demarche);
   graphql
     .request({
@@ -324,7 +339,7 @@ app.get("/archive/:numero_demarche", function (req, res) {
       document: query,
       variables: { demarcheNumber: parseInt(numero_demarche) },
       requestHeaders: {
-        authorization: "Bearer vgYasHB8kxYELzjEtbdYXWBj",
+        authorization: `Bearer ${bearerApiDS}`,
       },
     })
     .then((data) => {
@@ -338,73 +353,104 @@ app.get("/archive/:numero_demarche", function (req, res) {
         ),
         JSON.stringify(data)
       );
-      data.demarche.dossiers.nodes.forEach((dossier) => {
+      data.demarche.dossiers.nodes.forEach(async (dossier) => {
         // Téléchargement du résumé pdf de chaque dossier
         let path_for_download = path.join(
           __dirname,
           "temp",
           numero_demarche,
-          dossier.number.toString()
+          `${dossier.number.toString()}-${dossier.demandeur.nom}-${
+            dossier.demandeur.prenom
+          }`
         );
         mkdir(path_for_download);
-        download_file(
-          path_for_download,
-          `${dossier.number.toString()}_resume.pdf`,
-          dossier.pdf.url
-        );
+        await download_file(path_for_download, "demarche.pdf", dossier.pdf.url);
         // Parcours des champs, recherche des champs pièce justificative
         dossier.champs.forEach((element) => {
           if (element.file) {
+            //Si le champ comporte une indication "file", on le télécharge
             telechargement_fichier(dossier, element, numero_demarche);
           } else if (element.champs) {
+            // Même chose pour les champs répétables
             element.champs.forEach((champ_repetable) => {
               if (champ_repetable.file) {
-                telechargement_fichier(dossier, champ_repetable, numero_demarche);
+                telechargement_fichier(
+                  dossier,
+                  champ_repetable,
+                  numero_demarche
+                );
               }
             });
           }
         });
+        //Compression du dossier au format .zip
+
         var demarche_dossier = path.join(__dirname, "temp", numero_demarche);
         var demarche_dossier_cible = path.join(
           __dirname,
           "temp",
+          numero_demarche,
           `${numero_demarche}.zip`
         );
-        zipDirectory(demarche_dossier, demarche_dossier_cible).then((e) => {
-          res.download(demarche_dossier_cible);
-        });
+        zipDirectory(demarche_dossier, demarche_dossier_cible).then(
+          async (e) => {
+            //une fois le dossier compressé on l'envoie
+            res.attachment(demarche_dossier_cible).send();
+
+            //une fois le zip envoyé, on supprime tout ce qu'on a créé.
+            try {
+              fs.rmdir(demarche_dossier, { recursive: true }, (error) => {
+                if (error) {
+                  console.error(error);
+                } else {
+                  console.log(`Dossier ${demarche_dossier} supprimé`);
+                }
+              });
+              console.log(`${demarche_dossier} supprimé`);
+            } catch (err) {
+              console.error(`Error while deleting ${dir}.`);
+            }
+          }
+        );
       });
     });
 });
 
-function telechargement_fichier(dossier, element, numero_demarche) {
+async function telechargement_fichier(dossier, element, numero_demarche) {
   let path_for_download = path.join(
     __dirname,
     "temp",
     numero_demarche,
-    dossier.number.toString(),
+    `${dossier.number.toString()}-${dossier.demandeur.nom}-${
+      dossier.demandeur.prenom
+    }`,
     "pieces_justificatives"
   );
   mkdir(path_for_download);
-  download_file(path_for_download, element.file.filename, element.file.url);
+  await download_file(
+    path_for_download,
+    element.file.filename,
+    element.file.url
+  );
 }
 
 function mkdir(dir) {
-  fs.mkdir(dir, (err) => {
-    if (err) {
-      console.error(err);
-    }
-  });
+  try {
+    fs.mkdirSync(dir);
+  } catch (error) {
+    //console.error(error);
+  }
 }
 
 function download_file(folder, file_name, url) {
   const file = fs.createWriteStream(`${folder}/${file_name}`);
-  const request = https.get(url, (response) => {
+  https.get(url, (response) => {
     response.pipe(file);
+    file.on("finish", () => {
+      file.close();
+    });
   });
 }
-
-function getDataFromAPI(params) {}
 
 /**
  * @param {String} sourceDir: /some/folder/to/compress
