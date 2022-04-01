@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const archiver = require("archiver");
 const https = require("https");
+const { resolve } = require("path");
 
 const app = express();
 const port = 3000;
@@ -83,7 +84,6 @@ app.get("/archive/:numero_demarche", async (req, res) => {
         authorization: `Bearer ${bearerApiDS}`,
       },
     });
-    console.log(data);
     fs.writeFileSync(
       path.join(
         __dirname,
@@ -94,36 +94,40 @@ app.get("/archive/:numero_demarche", async (req, res) => {
       ),
       JSON.stringify(data)
     );
-    data.demarche.dossiers.nodes.forEach(async (dossier) => {
-      // Téléchargement du résumé pdf de chaque dossier
-      let path_for_download = path.join(
-        __dirname,
-        "temp",
-        `${numero_demarche}_temp`,
-        numero_demarche,
-        `${dossier.number.toString()}` //-${dossier.demandeur.nom}-${dossier.demandeur.prenom}`
-      );
-      mkdir(path_for_download);
-      await download_file(path_for_download, "demarche.pdf", dossier.pdf.url);
-      // Parcours des champs, recherche des champs pièce justificative
-      await dossier.champs.forEach(async (element) => {
-        if (element.file) {
-          //Si le champ comporte une indication "file", on le télécharge
-          await telechargement_fichier(dossier, element, numero_demarche);
-        } else if (element.champs) {
-          // Même chose pour les champs répétables
-          await element.champs.forEach(async (champ_repetable) => {
-            if (champ_repetable.file) {
-              await telechargement_fichier(
-                dossier,
-                champ_repetable,
-                numero_demarche
-              );
+    await Promise.all(
+      data.demarche.dossiers.nodes.map(async (dossier) => {
+        // Téléchargement du résumé pdf de chaque dossier
+        let path_for_download = path.join(
+          __dirname,
+          "temp",
+          `${numero_demarche}_temp`,
+          numero_demarche,
+          `${dossier.number.toString()}` //-${dossier.demandeur.nom}-${dossier.demandeur.prenom}` // /!\ si on réactive cette fonctionnalité, il faut changer la query.
+        );
+        mkdir(path_for_download);
+        await download_file(path_for_download, "demarche.pdf", dossier.pdf.url);
+        // Parcours des champs, recherche des champs pièce justificative
+        await Promise.all(
+          dossier.champs.map(async (element) => {
+            if (element.file) {
+              //Si le champ comporte une indication "file", on le télécharge
+              await telechargement_fichier(dossier, element, numero_demarche);
+            } else if (element.champs) {
+              // Même chose pour les champs répétables
+              await element.champs.forEach(async (champ_repetable) => {
+                if (champ_repetable.file) {
+                  await telechargement_fichier(
+                    dossier,
+                    champ_repetable,
+                    numero_demarche
+                  );
+                }
+              });
             }
-          });
-        }
-      });
-    });
+          })
+        );
+      })
+    );
   } catch (error) {
     switch (
       JSON.parse(JSON.stringify(error, undefined, 2)).response.errors[0]
@@ -154,79 +158,68 @@ app.get("/archive/:numero_demarche", async (req, res) => {
         } catch (error) {}
         break;
     }
-    console.log();
-  }
+  } finally {
+    //Compression du dossier au format .zip
 
-  //Compression du dossier au format .zip
-
-  var demarche_dossier = path.join(
-    __dirname,
-    "temp",
-    `${numero_demarche}_temp`,
-    numero_demarche
-  );
-  var demarche_dossier_cible = path.join(
-    __dirname,
-    "temp",
-    `${numero_demarche}_temp`,
-    `${numero_demarche}.zip`
-  );
-
-  await zipDirectory(demarche_dossier, demarche_dossier_cible);
-  //une fois le dossier compressé on l'envoie
-  console.log("Fichier à envoyer :", demarche_dossier_cible);
-  res.download(demarche_dossier_cible, (err) => {
-    console.log("download callback");
-    //deleteFolderRecursive(path.join(__dirname, "temp", `${numero_demarche}_temp`))
-    let dossier_a_supprimer = path.join(
+    var demarche_dossier = path.join(
       __dirname,
       "temp",
-      `${numero_demarche}_temp`
+      `${numero_demarche}_temp`,
+      numero_demarche
     );
-    fs.rmdir(dossier_a_supprimer, { recursive: true, force: true, maxRetries:3}, (err) => {
-      if (err) {
-        console.error(err);
-      } else {
-        console.log("Suppression effectuées : ", dossier_a_supprimer);
-      }
+    var demarche_dossier_cible = path.join(
+      __dirname,
+      "temp",
+      `${numero_demarche}_temp`,
+      `${numero_demarche}.zip`
+    );
+
+    await zipDirectory(demarche_dossier, demarche_dossier_cible);
+    //une fois le dossier compressé on l'envoie
+    res.download(demarche_dossier_cible, (err) => {
+      let dossier_a_supprimer = path.join(
+        __dirname,
+        "temp",
+        `${numero_demarche}_temp`
+      );
+
+      fs.rmdir(
+        dossier_a_supprimer,
+        { recursive: true, force: true, maxRetries: 3 },
+        (err) => {
+          if (err) {
+            console.error(err);
+          } else {
+            console.log("Suppression effectuée : ", dossier_a_supprimer);
+          }
+        }
+      );
     });
-  });
+  }
 });
 
-function deleteFolderRecursive(directoryPath) {
-  if (fs.existsSync(directoryPath)) {
-    fs.readdirSync(directoryPath).forEach((file, index) => {
-      console.log(file);
-      const curPath = path.join(directoryPath, file);
-      if (fs.lstatSync(curPath).isDirectory()) {
-        // recurse
-        deleteFolderRecursive(curPath);
-      } else {
-        // delete file
-        fs.unlinkSync(curPath);
-      }
-    });
-    fs.rmdirSync(directoryPath);
-  }
-}
-
 async function telechargement_fichier(dossier, element, numero_demarche) {
-  let path_for_download = path.join(
-    __dirname,
-    "temp",
-    `${numero_demarche}_temp`,
-    numero_demarche,
-    `${dossier.number.toString()}`, //-${dossier.demandeur.nom}-${dossier.demandeur.prenom}`,
-    "pieces_justificatives"
-  );
-  mkdir(path_for_download);
-  await download_file(
-    path_for_download,
-    element.file.filename,
-    element.file.url
-  );
+  return new Promise((resolve) => {
+    let path_for_download = path.join(
+      __dirname,
+      "temp",
+      `${numero_demarche}_temp`,
+      numero_demarche,
+      `${dossier.number.toString()}`, //-${dossier.demandeur.nom}-${dossier.demandeur.prenom}`,
+      "pieces_justificatives"
+    );
+    mkdir(path_for_download);
+    download_file(
+      path_for_download,
+      element.file.filename,
+      element.file.url
+    ).then(() => resolve());
+  });
 }
 
+/**
+ * @param {String} dir: /some/folder/to/create
+ */
 function mkdir(dir) {
   try {
     fs.mkdirSync(dir, { recursive: true });
@@ -236,7 +229,7 @@ function mkdir(dir) {
 }
 
 async function download_file(folder, file_name, url) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const file = fs.createWriteStream(`${folder}/${file_name}`);
     https.get(url, (response) => {
       response.pipe(file);
@@ -263,7 +256,9 @@ async function zipDirectory(sourceDir, outPath) {
       .on("error", (err) => reject(err))
       .pipe(stream);
 
-    stream.on("close", () => resolve());
+    stream.on("close", () => {
+      resolve();
+    });
     archive.finalize();
   });
 }
