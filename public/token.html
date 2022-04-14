@@ -115,6 +115,11 @@
 				</li>
 			</ul>
 		</div>
+		<div id="alert-save-token" class="fr-container fr-my-2w" style="display:none;">
+			<div class="fr-alert fr-alert--success">
+				<p class="fr-alert__title">Token enregistré</p>
+			</div>
+		</div>
 	</main>
 
 	<footer class="fr-footer" role="contentinfo" id="footer">
@@ -179,6 +184,7 @@
 			var fournisseur = document.getElementById('selectFournisseur').value;
 			var token = document.getElementById('token').value;
 			sessionStorage.setItem(fournisseur, token);
+			document.getElementById("alert-save-token").style.display = 'block';
 		})
 		document.getElementById("selectFournisseur").addEventListener('change', (e) => {
 			var fournisseur = document.querySelector("#selectFournisseur").value;
