@@ -4,7 +4,9 @@ const path = require("path");
 const fs = require("fs");
 const archiver = require("archiver");
 const https = require("https");
-const { resolve } = require("path");
+const helmet = require('helmet');
+var compression = require('compression');
+
 
 const app = express();
 const port = 3000;
@@ -51,6 +53,32 @@ fragment ChampFragment on Champ {
       ...FileFragment
     }
   }
+  ... on AddressChamp {
+    address {
+      ...AddressFragment
+    }
+  }
+  ...on CommuneChamp {
+    commune {
+      name
+      code
+    }
+    departement {
+      name
+      code
+    }
+  }
+}
+
+fragment AddressFragment on Address {
+  label
+  type
+  cityName
+  cityCode
+  departmentName
+  departmentCode
+  regionName
+  regionCode
 }
 
 fragment FileFragment on File {
@@ -62,6 +90,8 @@ fragment FileFragment on File {
 }`;
 
 app.use(express.static("public"));
+app.use(helmet());
+app.use(compression());
 
 app.get("/", function (req, res) {
   res.sendFile(path.join(__dirname, "index.html"));
@@ -84,6 +114,7 @@ app.get("/archive/:numero_demarche", async (req, res) => {
         authorization: `Bearer ${bearerApiDS}`,
       },
     });
+    console.log(data)
     fs.writeFileSync(
       path.join(
         __dirname,
@@ -129,6 +160,7 @@ app.get("/archive/:numero_demarche", async (req, res) => {
       })
     );
   } catch (error) {
+    console.error(error)
     switch (
       JSON.parse(JSON.stringify(error, undefined, 2)).response.errors[0]
         .extensions.code
