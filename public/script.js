@@ -13,7 +13,7 @@ document
   
 function download_archive() {
   if (bearerApiDS) {
-    let url = `http://localhost:3000/archive/${
+    let url = `https://archiveur-ds.herokuapp.com/archive/${
       document.getElementById("search-787-input").value
     }?bearer=${bearerApiDS}`;
     window.open(url);
