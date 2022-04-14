@@ -1,7 +1,10 @@
 {
   "name": "archiveur_ds",
   "version": "1.0.0",
-  "description": "",
+  "engines": {
+    "node": "14.16.1"
+  },
+  "description": "Outil d'archivage des démarches issues de démarches simplifiées",
   "main": "server.js",
   "dependencies": {
     "archiver": "^5.3.0",
