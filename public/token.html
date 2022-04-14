@@ -122,7 +122,7 @@
 		</div>
 	</main>
 
-	<footer class="fr-footer" role="contentinfo" id="footer" style="position: absolute; bottom: 0; width: 100%;">
+	<footer class="fr-footer" role="contentinfo" id="footer">
 		<div class="fr-container">
 			<div class="fr-footer__body">
 				<div class="fr-footer__brand fr-enlarge-link">
@@ -183,8 +183,10 @@
 		document.getElementById('enregistrerToken').addEventListener('click', (e) => {
 			var fournisseur = document.getElementById('selectFournisseur').value;
 			var token = document.getElementById('token').value;
-			sessionStorage.setItem(fournisseur, token);
-			document.getElementById("alert-save-token").style.display = 'block';
+			if (token && fournisseur) {
+				sessionStorage.setItem(fournisseur, token);
+				document.getElementById("alert-save-token").style.display = 'block';
+			}
 		})
 		document.getElementById("selectFournisseur").addEventListener('change', (e) => {
 			var fournisseur = document.querySelector("#selectFournisseur").value;
