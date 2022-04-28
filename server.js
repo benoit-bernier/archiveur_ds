@@ -4,9 +4,8 @@ const path = require("path");
 const fs = require("fs");
 const archiver = require("archiver");
 const https = require("https");
-const helmet = require('helmet');
-var compression = require('compression');
-
+const helmet = require("helmet");
+var compression = require("compression");
 
 const app = express();
 const port = 3000;
@@ -89,6 +88,25 @@ fragment FileFragment on File {
   url
 }`;
 
+const simple_query = graphql.gql`query getDemarche(
+  $demarcheNumber: Int!
+) {
+  demarche(number: $demarcheNumber) {
+    id
+    number
+    title
+    dossiers{
+      nodes {
+        ...DossierFragment
+      }
+    }
+  }
+}
+fragment DossierFragment on Dossier {
+  id
+}
+`;
+
 app.use(express.static("public"));
 app.use(helmet());
 app.use(compression());
@@ -101,7 +119,54 @@ app.get("/token.html", function (req, res) {
   res.sendFile(path.join(__dirname, "token.html"));
 });
 
-app.get("/archive/:numero_demarche", async (req, res) => {
+app.get("/check/:numero_demarche", async (req, res) => {
+  var numero_demarche = req.params.numero_demarche.toString();
+  var bearerApiDS = req.query.bearer;
+  try {
+    const data = await graphql.request({
+      url: "https://www.demarches-simplifiees.fr/api/v2/graphql",
+      document: simple_query,
+      variables: { demarcheNumber: parseInt(numero_demarche) },
+      requestHeaders: {
+        authorization: `Bearer ${bearerApiDS}`,
+      },
+    });
+    console.log(data);
+    answer = {
+      id_ds: data.demarche.number,
+      titre: data.demarche.title,
+      nb_dossier: data.demarche.dossiers.nodes.length,
+    };
+  } catch (error) {
+    console.log(error);
+    console.log(JSON.parse(JSON.stringify(error, undefined, 2)).response.errors[0]
+    .extensions.code)
+    switch (
+      JSON.parse(JSON.stringify(error, undefined, 2)).response.errors[0]
+        .extensions.code
+    ) {
+      case "unauthorized":
+        answer = {
+          reponse:
+            "Action non autorisée. Votre token ne semble pas pouvoir accéder à cette démarche.",
+        };
+        break;
+      case "not_found":
+        answer = {
+          reponse: "La démarche cherchée n'a pas été trouvée.",
+        };
+        break;
+      default:
+        answer = {
+          reponse: "Une erreur inconnue est survenue.",
+        };
+        break;
+    }
+  }
+  res.json(answer);
+});
+
+app.get("/download/:numero_demarche", async (req, res) => {
   var numero_demarche = req.params.numero_demarche.toString();
   var bearerApiDS = req.query.bearer;
   mkdir(`temp/${numero_demarche}_temp/${numero_demarche}`);
@@ -114,7 +179,7 @@ app.get("/archive/:numero_demarche", async (req, res) => {
         authorization: `Bearer ${bearerApiDS}`,
       },
     });
-    console.log(data)
+    console.log(data);
     fs.writeFileSync(
       path.join(
         __dirname,
@@ -160,7 +225,7 @@ app.get("/archive/:numero_demarche", async (req, res) => {
       })
     );
   } catch (error) {
-    console.error(error)
+    console.error(error);
     switch (
       JSON.parse(JSON.stringify(error, undefined, 2)).response.errors[0]
         .extensions.code

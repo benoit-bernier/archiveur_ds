@@ -20,42 +20,43 @@
 
 <body>
     <header role="banner" class="fr-header">
-		<div class="fr-header__body">
-			<div class="fr-container">
-				<div class="fr-header__body-row">
-					<div class="fr-header__brand fr-enlarge-link">
-						<div class="fr-header__brand-top">
-							<div class="fr-header__logo">
-								<p class="fr-logo">
-									Secrétariat Général
-									<br>pour les Affaires Régionales
-								</p>
-							</div>
-						</div>
-						<div class="fr-header__service">
-							<a href="index.html" title="Accueil - Gestion des APIs">
-							  <p class="fr-header__service-title">Archiveur DS</p>
-							</a>
-							<p class="fr-header__service-tagline">Outil d'archivage des démarches demarches-simplifiees.fr</p>
-						</div>
-					</div>
-					<div class="fr-header__tools">
-						<div class="fr-header__tools-links">
-							<ul class="fr-links-group">
-								<li>
-									<a class="fr-link fr-fi-lock-line" href="token.html">Se connecter</a>
-								</li>
-							</ul>
-						</div>
-					</div>					
-				</div>
-			</div>
-		</div>
-	</header>
+        <div class="fr-header__body">
+            <div class="fr-container">
+                <div class="fr-header__body-row">
+                    <div class="fr-header__brand fr-enlarge-link">
+                        <div class="fr-header__brand-top">
+                            <div class="fr-header__logo">
+                                <p class="fr-logo">
+                                    Secrétariat Général
+                                    <br>pour les Affaires Régionales
+                                </p>
+                            </div>
+                        </div>
+                        <div class="fr-header__service">
+                            <a href="index.html" title="Accueil - Gestion des APIs">
+                                <p class="fr-header__service-title">Archiveur DS</p>
+                            </a>
+                            <p class="fr-header__service-tagline">Outil d'archivage des démarches
+                                demarches-simplifiees.fr</p>
+                        </div>
+                    </div>
+                    <div class="fr-header__tools">
+                        <div class="fr-header__tools-links">
+                            <ul class="fr-links-group">
+                                <li>
+                                    <a class="fr-link fr-fi-lock-line" href="token.html">Se connecter</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
 
     <main class="contentAll" role="main">
         <!-- PRESENTATION -->
-        <div class="fr-container fr-mb-2w">
+        <div class="fr-container fr-mb-6w">
             <div class="fr-grid-row fr-mt-7w">
                 <div class="fr-col">
                     <h2>Archiveur <span style="color:#000091">demarches-simplifiees.fr</span></h2>
@@ -63,15 +64,16 @@
                         Archive les dossiers d'une démarche publiée sur démarches-simplifiées.fr.
                     </p>
                     <p>
-                        Télécharge les compte-rendus pdf des déclarations et les pièces justificatives associées dans une archive compressée.
+                        Télécharge les compte-rendus pdf des déclarations et les pièces justificatives associées dans
+                        une archive compressée.
                     </p>
                     <div class="fr-container--fluid">
                         <div class="fr-search-bar fr-search-bar--lg" id="search-2" role="search">
                             <label class="fr-label" for="search-787-input">
                                 Recherche
                             </label>
-                            <input class="fr-input" placeholder="Numéro de démarche. Ex : 57091" type="number" id="search-787-input"
-                                name="search-787-input">
+                            <input class="fr-input" placeholder="Numéro de démarche. Ex : 57091" type="number"
+                                id="search-787-input" name="search-787-input">
                             <button class="fr-btn" id="archive-btn">
                                 Archiver
                             </button>
@@ -79,12 +81,34 @@
                     </div>
                 </div>
             </div>
+            <!-- Ce serait mieux avec une modale -->
+            <div id="demarche_placeholder" class="fr-grid-row fr-mt-7w" style="display: none;">
+                <h3 id="demarche_title"></h3>
+                <ul class="fr-btns-group--center fr-btns-group--inline">
+                    <li>
+                        <button id="annuler_archive_demarche" class="fr-btn fr-btn--secondary fr-fi-lock-line fr-btn--icon-left">
+                            Annuler
+                        </button>
+                    </li>
+                    <li>
+                        <button id="telecharger_archive_demarche" class="fr-btn fr-fi-save-line fr-btn--icon-left">
+                            Télécharger
+                        </button>
+                    </li>
+                </ul>
+            </div>
             <div id="alert_token" class="fr-alert fr-alert--error fr-my-2w" style="display: none;">
                 <p class="fr-alert__title">Erreur : Token non renseigné</p>
-                <p>Nous n'avons pas trouvé votre token d'accès à Démarches Simplifiées. Merci de le renseigner <a target="_self" href="/token.html">ici</a>.</p>
+                <p>Nous n'avons pas trouvé votre token d'accès à Démarches Simplifiées. Merci de le renseigner <a
+                        target="_self" href="/token.html">ici</a>.</p>
+            </div>
+            <div id="alert_demarche" class="fr-alert fr-alert--error fr-my-2w" style="display:none;">
+                <p class="fr-alert__title">Erreur de récupération</p>
+                <p id="alert-text-explication"></p>
             </div>
         </div>
-        <footer class="fr-footer" role="contentinfo" id="footer" style="position: absolute; bottom: 0; width: 100%;">
+
+        <footer class="fr-footer" role="contentinfo" id="footer">
             <div class="fr-container">
                 <div class="fr-footer__body">
                     <div class="fr-footer__brand fr-enlarge-link">
@@ -147,6 +171,7 @@
         <!-- Script en version es6 module et nomodule pour les navigateurs le ne supportant pas -->
         <script type="text/javascript" nomodule src="dsfr/dsfr.nomodule.min.js"></script>
         <script src="script.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" defer></script>
     </main>
 </body>
 
