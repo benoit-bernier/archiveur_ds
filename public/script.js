@@ -22,8 +22,7 @@ document
 
   function check_demarche() {
     if (bearerApiDS) {
-      //let url = `https://archiveur-ds.herokuapp.com/check/${
-      let url = `http://localhost:3000/check/${
+      let url = `https://archiveur-ds.herokuapp.com/check/${
         document.getElementById("search-787-input").value
       }?bearer=${bearerApiDS}`;
       fetch(url)
@@ -49,8 +48,7 @@ document
 
 function download_archive() {
   if (bearerApiDS) {
-    //let url = `https://archiveur-ds.herokuapp.com/download/${
-    let url = `http://localhost:3000/download/${
+    let url = `https://archiveur-ds.herokuapp.com/download/${
       document.getElementById("search-787-input").value
     }?bearer=${bearerApiDS}`;
     window.open(url);
