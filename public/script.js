@@ -1,5 +1,6 @@
 var bearerApiDS = sessionStorage.getItem("DS");
 
+
 document.getElementById("archive-btn").addEventListener("click", () => {
   check_demarche();
 });
@@ -22,7 +23,7 @@ document
 
   function check_demarche() {
     if (bearerApiDS) {
-      let url = `https://archiveur-ds.herokuapp.com/check/${
+      let url = `${window.location.origin}/check/${
         document.getElementById("search-787-input").value
       }?bearer=${bearerApiDS}`;
       fetch(url)
@@ -48,7 +49,7 @@ document
 
 function download_archive() {
   if (bearerApiDS) {
-    let url = `https://archiveur-ds.herokuapp.com/download/${
+    let url = `${window.location.origin}/download/${
       document.getElementById("search-787-input").value
     }?bearer=${bearerApiDS}`;
     window.open(url);
